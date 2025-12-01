@@ -11,7 +11,7 @@ app.post('/signup', (req, res) => {
     const data = SignupSchema.safeParse(req.body)
     if(!data.success){
         res.json({
-            message: "Incorrect inputs"
+            message: "Incorrect sign up inputs"
         })
         return;
     }
@@ -28,7 +28,7 @@ app.post('/signin', (req, res) => {
     const data = SignInSchema.safeParse(req.body)
     if(!data.success){
         res.json({
-            message: "Incorrect inputs"
+            message: "Incorrect sign in inputs"
         })
         return;
     }
@@ -47,7 +47,7 @@ app.post('/room', authMiddleware, (req, res) => {
     const data = CreateRoomSchema.safeParse(req.body)
     if(!data.success){
         res.json({
-            message: "Incorrect inputs"
+            message: "Incorrect room inputs"
         })
         return;
     }
