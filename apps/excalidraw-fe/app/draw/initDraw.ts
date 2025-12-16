@@ -9,10 +9,10 @@ type Shape = {
     height: number;
 } | {
     type: "circle";
-    centerX: number;
-    centerY: number;
-    radius: number;
-}
+        centerX: number;
+        centerY: number;
+        radius: number;
+    }
 
 export async function initDraw(canvas: HTMLCanvasElement, roomId:string, socket: WebSocket) {
     const ctx = canvas?.getContext("2d")
@@ -37,7 +37,9 @@ export async function initDraw(canvas: HTMLCanvasElement, roomId:string, socket:
     }
 
     existingShapes = await getExistingShapes(roomId)
-
+    //@ts-ignore
+    const currTool = window.tool
+    console.log(currTool)
     console.log(existingShapes)
     clearCanvas(existingShapes, ctx, canvas)
     let clicked = false;
@@ -58,13 +60,28 @@ export async function initDraw(canvas: HTMLCanvasElement, roomId:string, socket:
         clicked = false;
         const width = e.clientX - startX;
         const height = e.clientY - startY;
-        const shape:Shape = {
-            type: "rect",
-            x: startX,
-            y: startY,
-            width,
-            height
+        let shape:Shape|null = null;
+        if(currTool=="rectangle"){
+            shape = {
+                type: "rect",
+                x: startX,
+                y: startY,
+                width,
+                height
+            }
         }
+        else if(currTool=="circle"){
+            const radius = Math.abs(Math.max(width, height))
+            shape = {
+                type: "circle",
+                centerX: startX + radius,
+                centerY: startY + radius,
+                radius: radius
+            }
+        }
+        
+        if(!shape) return;
+
         existingShapes.push(shape)
 
         socket.send(JSON.stringify({
@@ -81,8 +98,16 @@ export async function initDraw(canvas: HTMLCanvasElement, roomId:string, socket:
             const width = e.clientX - startX;
             const height = e.clientY - startY;
             clearCanvas(existingShapes, ctx, canvas)
-            ctx.strokeStyle = "rgba(255, 255, 255)"
-            ctx.strokeRect(startX, startY, width, height)
+            if(currTool=="rectangle"){
+                ctx.strokeStyle = "rgba(255, 255, 255)"
+                ctx.strokeRect(startX, startY, width, height)
+            }
+            else if(currTool=="circle"){
+                ctx.beginPath()
+                const radius = Math.abs(Math.max(width, height))
+                ctx.arc(startX + radius, startY+radius, radius, 0, 2*Math.PI)
+                ctx.stroke()
+            }
         }
     })
 }
@@ -95,6 +120,11 @@ function clearCanvas(existingShapes: Shape[], ctx: CanvasRenderingContext2D, can
     existingShapes.map((shape)=>{
         if(shape.type === "rect"){
             ctx.strokeRect(shape.x, shape.y, shape.width, shape.height)
+        }
+        if(shape.type==="circle"){
+            ctx.beginPath()
+            ctx.arc(shape.centerX, shape.centerY, shape.radius, 0, 2*Math.PI)
+            ctx.stroke()
         }
     })
 }

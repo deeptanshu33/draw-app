@@ -110,8 +110,7 @@ app.get('/chats/:roomId', authMiddleware, async (req, res)=>{
         }, 
         orderBy:{
             id: "desc"
-        },
-        take: 50
+        }
     })
 
     return res.status(200).json({
