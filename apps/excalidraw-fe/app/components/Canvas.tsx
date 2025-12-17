@@ -4,23 +4,25 @@ import { Circle } from 'lucide-react';
 import { Minus } from 'lucide-react';
 import { RectangleHorizontal } from 'lucide-react';
 import { initDraw } from "../draw/initDraw";
+import { Game } from "../draw/Game";
 
 type toolOptions = "circle" | "line" | "rectangle"
 
 export function Canvas({roomId, socket}: {roomId: string, socket: WebSocket}){
     const canvasRef = useRef<HTMLCanvasElement>(null)
+    const [game, setGame] = useState<Game>()
     const [tool, setTool] = useState<toolOptions>('circle')
 
     useEffect(()=>{
-        //@ts-ignore
-        window.tool = tool
-    }, [tool])
+        game?.setTool(tool)
+    }, [tool, game])
 
     useEffect(() => {
         if (canvasRef.current) {
-            initDraw(canvasRef.current, roomId, socket)
+            const g = new Game(canvasRef.current, roomId, socket)
+            setGame(g)
         }
-    }, [canvasRef, tool])
+    }, [canvasRef])
     return (
         <div style={{height: "100vh", overflow:"hidden"}} className="bg-white relative h-screen">
             <canvas className="absolute inset-0 z-0" ref={canvasRef} width={2000} height={1000}></canvas>
