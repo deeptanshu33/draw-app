@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { Circle } from 'lucide-react';
 import { Minus } from 'lucide-react';
 import { RectangleHorizontal } from 'lucide-react';
-import { initDraw } from "../draw/initDraw";
 import { Game } from "../draw/Game";
 
 type toolOptions = "circle" | "line" | "rectangle"
@@ -21,6 +20,10 @@ export function Canvas({roomId, socket}: {roomId: string, socket: WebSocket}){
         if (canvasRef.current) {
             const g = new Game(canvasRef.current, roomId, socket)
             setGame(g)
+
+            return ()=>{
+                g.destroy()
+            } 
         }
     }, [canvasRef])
     return (
