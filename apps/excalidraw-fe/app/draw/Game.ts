@@ -23,7 +23,7 @@ export class Game {
     private socket: WebSocket
     private currTool: toolOptions
     private clicked: boolean
-    private startX = 0 
+    private startX = 0
     private startY = 0
 
     constructor(canvas: HTMLCanvasElement, roomId: string, socket: WebSocket) {
@@ -42,6 +42,13 @@ export class Game {
 
     async init() {
         this.existingShapes = await getExistingShapes(this.roomId)
+        this.clearCanvas()
+    }
+
+    destroy() {
+        this.canvas?.removeEventListener("mousedown", this.mousedownHandler)
+        this.canvas?.removeEventListener("mouseup", this.mouseupHandler)
+        this.canvas?.removeEventListener("mousemove", this.mousemoveHandler)
     }
 
     clearCanvas() {
@@ -61,7 +68,7 @@ export class Game {
         })
     }
 
-    setTool(tool: toolOptions){
+    setTool(tool: toolOptions) {
         this.currTool = tool
     }
 
@@ -83,68 +90,74 @@ export class Game {
         }
     }
 
-    initMouseHandlers() {
-        this.canvas?.addEventListener("mousedown", (e) => {
-            this.clicked = true;
-            this.startX = e.clientX;
-            this.startY = e.clientY;
-            console.log(e.clientX);
-            console.log(e.clientY);
-        })
+    mousedownHandler = (e: MouseEvent) => {
+        this.clicked = true;
+        this.startX = e.clientX;
+        this.startY = e.clientY;
+        console.log(e.clientX);
+        console.log(e.clientY);
+    }
 
-        this.canvas?.addEventListener("mouseup", (e) => {
-            this.clicked = false;
+    mouseupHandler = (e: MouseEvent) => {
+
+        this.clicked = false;
+        const width = e.clientX - this.startX;
+        const height = e.clientY - this.startY;
+        let shape: Shape | null = null;
+        if (this.currTool == "rectangle") {
+            shape = {
+                type: "rect",
+                x: this.startX,
+                y: this.startY,
+                width,
+                height
+            }
+        }
+        else if (this.currTool == "circle") {
+            const radius = Math.abs(Math.max(width, height))
+            shape = {
+                type: "circle",
+                centerX: this.startX + radius,
+                centerY: this.startY + radius,
+                radius: radius
+            }
+        }
+
+        if (!shape) return;
+
+        this.existingShapes.push(shape)
+
+        this.socket.send(JSON.stringify({
+            type: "chat",
+            message: JSON.stringify({
+                shape
+            }),
+            roomId: Number(this.roomId)
+        }))
+    }
+
+    mousemoveHandler = (e: MouseEvent) => {
+        
+        if (this.clicked) {
             const width = e.clientX - this.startX;
             const height = e.clientY - this.startY;
-            let shape: Shape | null = null;
+            this.clearCanvas()
             if (this.currTool == "rectangle") {
-                shape = {
-                    type: "rect",
-                    x: this.startX,
-                    y: this.startY,
-                    width,
-                    height
-                }
+                this.ctx.strokeStyle = "rgba(255, 255, 255)"
+                this.ctx.strokeRect(this.startX, this.startY, width, height)
             }
             else if (this.currTool == "circle") {
+                this.ctx.beginPath()
                 const radius = Math.abs(Math.max(width, height))
-                shape = {
-                    type: "circle",
-                    centerX: this.startX + radius,
-                    centerY: this.startY + radius,
-                    radius: radius
-                }
+                this.ctx.arc(this.startX + radius, this.startY + radius, radius, 0, 2 * Math.PI)
+                this.ctx.stroke()
             }
+        }
+    }
 
-            if (!shape) return;
-
-            this.existingShapes.push(shape)
-
-            this.socket.send(JSON.stringify({
-                type: "chat",
-                message: JSON.stringify({
-                    shape
-                }),
-                roomId: Number(this.roomId)
-            }))
-        })
-
-        this.canvas?.addEventListener("mousemove", (e) => {
-            if (this.clicked) {
-                const width = e.clientX - this.startX;
-                const height = e.clientY - this.startY;
-                this.clearCanvas()
-                if (this.currTool == "rectangle") {
-                    this.ctx.strokeStyle = "rgba(255, 255, 255)"
-                    this.ctx.strokeRect(this.startX, this.startY, width, height)
-                }
-                else if (this.currTool == "circle") {
-                    this.ctx.beginPath()
-                    const radius = Math.abs(Math.max(width, height))
-                    this.ctx.arc(this.startX + radius, this.startY + radius, radius, 0, 2 * Math.PI)
-                    this.ctx.stroke()
-                }
-            }
-        })
+    initMouseHandlers() {
+        this.canvas?.addEventListener("mousedown", this.mousedownHandler)
+        this.canvas?.addEventListener("mouseup", this.mouseupHandler)
+        this.canvas?.addEventListener("mousemove", this.mousemoveHandler)
     }
 }
