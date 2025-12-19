@@ -1,4 +1,11 @@
+import { start } from "repl";
+import { toolOptions } from "../components/Canvas";
 import { getExistingShapes } from "./http";
+
+type Point = {
+    x: number,
+    y: number
+}
 
 type Shape = {
     type: "rect";
@@ -11,9 +18,10 @@ type Shape = {
     centerX: number;
     centerY: number;
     radius: number;
+} | {
+    type: "pencil";
+    points: Point[]
 }
-
-type toolOptions = "circle" | "line" | "rectangle"
 
 export class Game {
     private canvas: HTMLCanvasElement
@@ -22,6 +30,7 @@ export class Game {
     private roomId: string
     private socket: WebSocket
     private currTool: toolOptions
+    private currPath: Point[]
     private clicked: boolean
     private startX = 0
     private startY = 0
@@ -30,6 +39,7 @@ export class Game {
         this.canvas = canvas
         this.ctx = canvas.getContext("2d")!
         this.existingShapes = []
+        this.currPath = []
         this.roomId = roomId
         this.clicked = false
         this.currTool = "circle"
@@ -65,6 +75,14 @@ export class Game {
                 this.ctx.arc(shape.centerX, shape.centerY, shape.radius, 0, 2 * Math.PI)
                 this.ctx.stroke()
             }
+            if (shape.type === "pencil"){
+                const [firstPoint, ...rest] = shape.points
+                this.ctx.lineCap = "round"
+                this.ctx.beginPath()
+                this.ctx.moveTo(firstPoint.x, firstPoint.y)
+                rest.forEach(p => this.ctx.lineTo(p.x, p.y))
+                this.ctx.stroke()
+            }
         })
     }
 
@@ -91,6 +109,13 @@ export class Game {
     }
 
     mousedownHandler = (e: MouseEvent) => {
+        console.log("mouseDown")
+        if(this.currTool=="pencil"){
+            this.currPath.push({
+                x: e.clientX,
+                y: e.clientY
+            })
+        }
         this.clicked = true;
         this.startX = e.clientX;
         this.startY = e.clientY;
@@ -99,7 +124,6 @@ export class Game {
     }
 
     mouseupHandler = (e: MouseEvent) => {
-
         this.clicked = false;
         const width = e.clientX - this.startX;
         const height = e.clientY - this.startY;
@@ -122,6 +146,13 @@ export class Game {
                 radius: radius
             }
         }
+        else if (this.currTool == "pencil"){
+            shape = {
+                type: "pencil",
+                points: this.currPath
+            }
+            this.currPath = []
+        }
 
         if (!shape) return;
 
@@ -137,11 +168,26 @@ export class Game {
     }
 
     mousemoveHandler = (e: MouseEvent) => {
-        
         if (this.clicked) {
             const width = e.clientX - this.startX;
             const height = e.clientY - this.startY;
+            if (this.currTool == "pencil"){
+                const currX = e.clientX
+                const currY = e.clientY
+                this.ctx.lineCap = 'round'
+                this.ctx.beginPath()
+                this.ctx.moveTo(this.startX, this.startY)
+                this.ctx.lineTo(currX, currY)
+                this.ctx.stroke()
+                this.currPath.push({x:currX, y:currY})
+                this.startX = currX
+                this.startY = currY
+                
+                return;
+            }
+
             this.clearCanvas()
+
             if (this.currTool == "rectangle") {
                 this.ctx.strokeStyle = "rgba(255, 255, 255)"
                 this.ctx.strokeRect(this.startX, this.startY, width, height)
@@ -152,6 +198,7 @@ export class Game {
                 this.ctx.arc(this.startX + radius, this.startY + radius, radius, 0, 2 * Math.PI)
                 this.ctx.stroke()
             }
+            
         }
     }
 
