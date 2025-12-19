@@ -32,6 +32,7 @@ export class Game {
     private currTool: toolOptions
     private currPath: Point[]
     private clicked: boolean
+    private viewportTransform = {}
     private startX = 0
     private startY = 0
 
@@ -51,6 +52,11 @@ export class Game {
 
 
     async init() {
+        this.viewportTransform = {
+            x: 0,
+            y: 0,
+            scale: 1
+        }
         this.existingShapes = await getExistingShapes(this.roomId)
         this.clearCanvas()
     }
