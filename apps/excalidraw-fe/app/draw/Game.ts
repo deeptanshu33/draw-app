@@ -89,6 +89,26 @@ export class Game {
         this.viewportY = localY
     }
 
+    updateZooming = (e:WheelEvent) => {
+        const oldX = this.viewportTransform.x
+        const oldY = this.viewportTransform.y
+
+        const localX = e.clientX
+        const localY = e.clientY
+
+        const previousScale = this.viewportTransform.scale
+        
+        let newScale = (this.viewportTransform.scale += e.deltaY*-0.01)
+        newScale = Math.min(4, Math.max(0.2, newScale))
+
+        const newX = localX - (localX - oldX) * (newScale / previousScale)
+        const newY = localY - (localY - oldY) * (newScale / previousScale)
+
+        this.viewportTransform.x = newX
+        this.viewportTransform.y = newY
+        this.viewportTransform.scale = newScale
+    }
+
     clearCanvas() {
         this.ctx.setTransform(1, 0, 0, 1, 0, 0)
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
@@ -121,7 +141,6 @@ export class Game {
                 this.ctx.lineCap = "round"
                 this.ctx.beginPath()
                 this.ctx.moveTo(firstPoint.x, firstPoint.y)
-                console.log(firstPoint)
                 rest.forEach(p => this.ctx.lineTo(p.x, p.y))
                 this.ctx.stroke()
             }
@@ -154,7 +173,6 @@ export class Game {
     }
 
     mousedownHandler = (e: MouseEvent) => {
-        console.log("mouseDown")
         const {worldX: fX, worldY: fY} = screenToWorldCoordinates(e.clientX, e.clientY, this.viewportTransform.x, this.viewportTransform.y ,this.viewportTransform.scale)
         if(this.currTool=="pencil"){
             this.currPath.push({
@@ -167,8 +185,6 @@ export class Game {
         this.startY = e.clientY;
         this.viewportX = e.clientX
         this.viewportY = e.clientY
-        console.log(e.clientX);
-        console.log(e.clientY);
     }
 
     mouseupHandler = (e: MouseEvent) => {
@@ -267,9 +283,17 @@ export class Game {
         }
     }
 
+    mousewheelHandler = (e: WheelEvent) => {
+        console.log("zoom")
+        e.preventDefault()
+        this.updateZooming(e)
+        this.clearCanvas()
+    }
+
     initMouseHandlers() {
         this.canvas?.addEventListener("mousedown", this.mousedownHandler)
         this.canvas.addEventListener("mouseleave", this.mouseupHandler)
+        this.canvas.addEventListener("wheel", this.mousewheelHandler, {passive: false})
         window.addEventListener("mouseup", this.mouseupHandler)
         this.canvas?.addEventListener("mouseup", this.mouseupHandler)
         this.canvas?.addEventListener("mousemove", this.mousemoveHandler)
