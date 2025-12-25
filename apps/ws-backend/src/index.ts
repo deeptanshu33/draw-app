@@ -22,16 +22,40 @@ function checkUser(token: string): string | null {
 }
 
 wss.on('connection', function connection(ws, request) {
-    const url = request.url
-    if (!url) return;
-    const queryParams = new URLSearchParams(url.split("?")[1])
-    const token = queryParams.get('token') || ""
+    // const url = request.url
+    // if (!url) return;
+    // const queryParams = new URLSearchParams(url.split("?")[1])
+    // const token = queryParams.get('token') || ""
 
-    const userId = checkUser(token)
+    // const userId = checkUser(token)
 
-    if (!userId) {
+    // if (!userId) {
+    //     ws.close()
+    //     return;
+    // }
+
+    const cookieHeader = request.headers.cookie
+    if(!cookieHeader){
         ws.close()
-        return;
+        return
+    }
+
+    const cookies = Object.fromEntries(
+        cookieHeader.split("; ").map(c => c.split("="))
+    )
+
+    const access_token = cookies.access_token
+
+    if(!access_token){
+        ws.close()
+        return
+    }
+
+    const userId = checkUser(access_token)
+
+    if(!userId){
+        ws.close()
+        return
     }
 
     users.push({

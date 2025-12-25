@@ -5,16 +5,21 @@ import { authMiddleware } from './middleware'
 import { CreateRoomSchema, SignInSchema, SignupSchema } from '@repo/common/types'
 import { prismaClient } from "@repo/db/client"
 import cors from "cors"
+import cookieParser from "cookie-parser"
 
 const app = express()
-app.use(cors())
+app.use(cors({
+    origin: "http://localhost:3002",
+    credentials: true
+}))
 app.use(express.json())
+app.use(cookieParser())
 
 app.post('/signup', async (req, res) => {
     //get username password
     const parsedData = SignupSchema.safeParse(req.body)
     if (!parsedData.success) {
-        res.json({
+        res.status(401).json({
             message: "Incorrect sign up inputs"
         })
         return;
@@ -69,8 +74,15 @@ app.post('/signin', async (req, res) => {
         userId: user.id
     }, JWT_SECRET)
 
-    res.json({
-        token
+    res.cookie("access_token", token, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: false
+,
+    })
+
+    res.status(200).json({
+        message: "authentication succesful"
     })
 })
 
