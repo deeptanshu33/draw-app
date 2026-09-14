@@ -136,7 +136,8 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
                                 />
                                 <input
                                     ref={nameRef}
-                                    className="input-field pl-12"
+                                    className="input-field"
+                                    style={{ paddingLeft: 48 }}
                                     type="text"
                                     placeholder="Full name"
                                     required
@@ -151,7 +152,8 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
                             />
                             <input
                                 ref={emailRef}
-                                className="input-field pl-12"
+                                className="input-field"
+                                style={{ paddingLeft: 48 }}
                                 type="text"
                                 placeholder="Email address"
                                 required
@@ -165,7 +167,8 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
                             />
                             <input
                                 ref={passwordRef}
-                                className="input-field pl-12"
+                                className="input-field"
+                                style={{ paddingLeft: 48 }}
                                 type="password"
                                 placeholder="Password"
                                 required
